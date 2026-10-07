@@ -122,6 +122,8 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交点检", "判定正常", "提出维修"],
     actionTargets: {"提交点检": "点检中", "判定正常": "状态正常", "提出维修": "需维修"},
     metrics: ["待点检设备", "状态正常设备", "需维修设备"],
+    dedupField: "点检设备",
+    exportRequiredFields: ["点检编号", "点检设备", "点检部位", "点检方法", "点检结果", "点检人员", "点检日期", "点检状态"],
   },
   {
     key: "overhaul",

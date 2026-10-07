@@ -65,6 +65,7 @@
 
     <footer class="page-foot">
       <span>共 {{ total }} 条设备点检记录</span>
+      <span v-if="noticeMessage" class="notice-text">{{ noticeMessage }}</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
   </section>
@@ -85,11 +86,11 @@ const meta = moduleMeta('equipcheck')
 const columns = ["点检编号", "点检设备", "点检部位", "点检方法", "点检结果", "点检人员", "点检日期", "点检状态"]
 const actions = ["提交点检", "判定正常", "提出维修"]
 const statuses = ["待点检", "点检中", "状态正常", "需维修"]
-const stats = [{"label": "待点检设备", "value": 0}, {"label": "状态正常设备", "value": 0}, {"label": "需维修设备", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
+const noticeMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
 const statusSummary = computed(() =>
@@ -98,14 +99,42 @@ const statusSummary = computed(() =>
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+// 统计卡跟表格用同一份查询结果，需维修设备台数两边对得上。
+const stats = computed(() =>
+  [
+    { label: '待点检设备', status: '待点检' },
+    { label: '状态正常设备', status: '状态正常' },
+    { label: '需维修设备', status: '需维修' },
+  ].map((item) => ({
+    label: item.label,
+    value: rows.value.filter((row) => String(row.status) === item.status).length,
+  })),
+)
 
 function resetFilters() {
   filters.value = {}
   reload()
 }
 
+// 导出跟着页面当前查询走：先把筛选条件应用到列表，再按同一份结果取数导出。
+// 取不到数时只提示、不出文件，改完条件再点一次即可重新导出。
 function exportRows() {
-  downloadEntries(meta.key)
+  noticeMessage.value = ''
+  reload()
+  try {
+    const report = downloadEntries(meta.key, filters.value)
+    const parts = [`已按当前条件导出 ${report.exported} 条设备点检记录`]
+    if (report.heldBack > 0) {
+      parts.push(`${report.heldBack} 条点检人员等空数据的记录被拦下待补，未混入导出件`)
+    }
+    if (report.syncedToOverhaul > 0) {
+      parts.push(`${report.syncedToOverhaul} 台设备已落入设备检修待安排清单`)
+    }
+    noticeMessage.value = parts.join('；')
+  } catch (error) {
+    errorMessage.value =
+      error instanceof Error ? error.message : '设备点检清单取不到数，请调整条件后重新导出'
+  }
 }
 
 function openCreate() {
@@ -114,11 +143,13 @@ function openCreate() {
 
 function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
+  noticeMessage.value = ''
   const result = applyAction(meta.key, Number(row.id), action)
   if (!result.ok) {
     errorMessage.value = result.message
     return
   }
+  noticeMessage.value = result.message
   reload()
 }
 
