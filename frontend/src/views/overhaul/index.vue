@@ -78,6 +78,7 @@ import {
   listEntries,
   moduleMeta,
   runAction as applyAction,
+  syncRepairsToOverhaul,
 } from '@/api/local-service'
 import type { EntryRow } from '@/data/types'
 
@@ -105,7 +106,11 @@ function resetFilters() {
 }
 
 function exportRows() {
-  downloadEntries(meta.key)
+  errorMessage.value = ''
+  const result = downloadEntries(meta.key, filters.value)
+  if (!result.ok) {
+    errorMessage.value = result.message
+  }
 }
 
 function openCreate() {
@@ -125,6 +130,8 @@ function runAction(action: string, row: EntryRow) {
 function reload() {
   errorMessage.value = ''
   try {
+    // 点检判出的需维修设备会落到本页待安排清单，进入页面前先对账一次。
+    syncRepairsToOverhaul()
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total

@@ -105,7 +105,11 @@ function resetFilters() {
 }
 
 function exportRows() {
-  downloadEntries(meta.key)
+  errorMessage.value = ''
+  const result = downloadEntries(meta.key, filters.value)
+  if (!result.ok) {
+    errorMessage.value = result.message
+  }
 }
 
 function openCreate() {

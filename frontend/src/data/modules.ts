@@ -122,6 +122,9 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交点检", "判定正常", "提出维修"],
     actionTargets: {"提交点检": "点检中", "判定正常": "状态正常", "提出维修": "需维修"},
     metrics: ["待点检设备", "状态正常设备", "需维修设备"],
+    // 同一台设备重复登记只保留一条；导出前点检人员必须补齐。
+    dedupeField: "点检设备",
+    requiredOnExport: ["点检人员"],
   },
   {
     key: "overhaul",

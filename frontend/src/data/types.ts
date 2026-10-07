@@ -18,6 +18,10 @@ export type ModuleMeta = {
   actions: string[]
   actionTargets: Record<string, string>
   metrics: string[]
+  // 同一实体重复登记时，按该字段去重只留一条；为空则不做去重。
+  dedupeField?: string
+  // 导出前必须逐行校一遍的字段，缺任意一个都拦下导出，要求先补录。
+  requiredOnExport?: string[]
 }
 
 export type PageResult = {
